@@ -30,7 +30,7 @@ let
   #
   mkPoetryPython =
     { poetrylock
-    , poetryPkg
+    , poetryPkg ? poetry.override { inherit python; }
     , overrides ? [ defaultPoetryOverrides ]
     , meta ? {}
     , python ? pkgs.python3
@@ -134,6 +134,27 @@ let
       in
         py.python.withPackages (_: py.poetryPackages);
 
+  /* Returns an array of all poetry created python packages.
+
+     Example:
+       poetry2nix.mkPoetryPackages { poetrylock = ./poetry.lock; python = python3; }
+  */
+  mkPoetryPackages =
+    { poetrylock
+    , poetryPkg ? poetry.override { inherit python; }
+    , overrides ? [defaultPoetryOverrides ]
+    , python ? pkgs.python3
+    , pwd ? null
+    }:
+     let
+       p = mkPoetryPython (
+         {
+           inherit poetrylock poetryPkg overrides python pwd;
+         }
+       );
+     in
+       p.poetryPackages;
+
   /* Creates a Python application from pyproject.toml and poetry.lock */
   mkPoetryApplication =
     { src
@@ -234,7 +255,7 @@ let
 
 in
 {
-  inherit mkPoetryEnv mkPoetryApplication cli doc;
+  inherit mkPoetryEnv mkPoetryApplication mkPoetryPython cli doc;
 
   /*
   The default list of poetry2nix override overlays
